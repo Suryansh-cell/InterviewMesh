@@ -1,0 +1,26 @@
+
+
+services:
+  client:
+    build: ./client
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - server
+
+  server:
+    build: ./server
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - ml
+
+  ml:
+    build: ./ml
+    ports:
+      - "5001:5001"
+    command: python app.py
