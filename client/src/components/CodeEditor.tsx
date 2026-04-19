@@ -5,10 +5,11 @@ import { useSessionStore } from '../store/sessionStore';
 interface CodeEditorProps {
   onCodeChange?: (code: string) => void;
   onAnalyze?: () => void;
+  onRun?: () => void;
   readOnly?: boolean;
 }
 
-export default function CodeEditor({ onCodeChange, onAnalyze, readOnly = false }: CodeEditorProps) {
+export default function CodeEditor({ onCodeChange, onAnalyze, onRun, readOnly = false }: CodeEditorProps) {
   const { code, language, setCode, setLanguage } = useSessionStore();
   const editorRef = useRef<any>(null);
 
@@ -85,9 +86,12 @@ int main() {
 
   const handleLanguageChange = (newLanguage: LanguageKey) => {
     const currentCode = useSessionStore.getState().code;
-    const isTemplateCode = templateValues.includes(currentCode);
+    const isEmptyOrTemplate = !currentCode || 
+      Object.values(languageTemplates).some(template => 
+        template.trim() === currentCode.trim()
+      );
     setLanguage(newLanguage);
-    if (!currentCode || isTemplateCode) {
+    if (isEmptyOrTemplate) {
       setCode(languageTemplates[newLanguage]);
     }
   };
@@ -117,8 +121,9 @@ int main() {
             ))}
           </select>
           <button
-            onClick={() => {/* placeholder for run */}}
-            className="text-xs px-3 py-1 rounded-md font-medium transition-colors"
+            onClick={onRun}
+            disabled={!onRun}
+            className="text-xs px-3 py-1 rounded-md font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background: 'rgba(16,185,129,0.15)',
               color: '#34D399',

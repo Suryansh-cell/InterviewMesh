@@ -21,6 +21,9 @@ export default function MatchCard({ match, onStartSession, index }: MatchCardPro
   const avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(match.name)}&backgroundColor=6366f1,8b5cf6,a78bfa&backgroundType=gradientLinear`;
 
   const handleStart = async () => {
+    console.log('MatchCard handleStart called for match:', match.id, match.name);
+    console.log('Match object:', match);
+    console.log('onStartSession function:', onStartSession);
     setIsStarting(true);
     await onStartSession(match.id);
     setIsStarting(false);

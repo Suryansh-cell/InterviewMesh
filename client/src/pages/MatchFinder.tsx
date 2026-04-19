@@ -32,19 +32,25 @@ export default function MatchFinder() {
 
   const liveMatches = useMemo(() => {
     if (!user) return [];
-    return livePeers
+    const matches = livePeers
       .filter((peer) => peer.userId !== user.id)
       .map((peer) => ({
         ...peer,
         id: peer.userId,
         matchScore: computeCompatibility(peer),
       }));
+    console.log('Live peers:', livePeers);
+    console.log('Live matches:', matches);
+    return matches;
   }, [livePeers, user]);
 
   useEffect(() => {
     const fetchMatches = async () => {
       try {
+        console.log('Fetching matches...');
         const res = await api.get('/api/match');
+        console.log('Matches response:', res.data);
+        console.log('Number of matches:', res.data.length);
         setMatches(res.data);
       } catch (err) {
         console.error('Match fetch error:', err);
@@ -59,6 +65,7 @@ export default function MatchFinder() {
   useEffect(() => {
     if (!user) return;
 
+    console.log('Joining match lobby with user:', user);
     matchSocket.emit('join-lobby', {
       userId: user.id,
       name: user.name,
@@ -70,11 +77,13 @@ export default function MatchFinder() {
     });
 
     const unsubscribeLobby = matchSocket.on('lobby-update', (users: any[]) => {
+      console.log('Received lobby update:', users);
       setLivePeers(users);
       setLiveCount(users.filter((peer) => peer.userId !== user.id).length);
     });
 
     const unsubscribeIncoming = matchSocket.on('incoming-match', ({ roomId, from }: any) => {
+      console.log('Received incoming match:', { roomId, from });
       toast.success(`${from.name} connected with you! Redirecting...`, {
         style: { background: '#1E293B', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.1)' },
       });
@@ -82,6 +91,7 @@ export default function MatchFinder() {
     });
 
     const unsubscribeError = matchSocket.on('match-error', ({ message }: any) => {
+      console.log('Received match error:', message);
       toast.error(message || 'Match request failed');
     });
 
@@ -93,21 +103,39 @@ export default function MatchFinder() {
   }, [matchSocket, navigate, user]);
 
   const handleStartSession = async (matchId: number) => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, cannot start session');
+      toast.error('Please log in first');
+      return;
+    }
+    console.log('Starting session with matchId:', matchId);
+    console.log('Current user:', user);
     setStarting(matchId);
     try {
+      console.log('Calling API to accept match...');
       const res = await api.post('/api/match/accept', { matchedUserId: matchId });
+      console.log('API response:', res.data);
       toast.success('Match found! 🎉', {
         style: { background: '#1E293B', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.1)' },
       });
+      console.log('Emitting socket event...');
       matchSocket.emit('request-match', {
         targetUserId: matchId,
         roomId: res.data.roomId,
         from: { id: user.id, name: user.name },
       });
+      console.log('Navigating to session...');
       navigate(`/session/${res.data.roomId}`);
-    } catch {
-      toast.error('Failed to start session');
+    } catch (error) {
+      console.error('Failed to start session:', error);
+      // For dummy data, show that click worked but API failed
+      if (matchId >= 997 && matchId <= 999) {
+        toast.success('Click detected! (Dummy user - API call expected to fail)', {
+          style: { background: '#1E293B', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.1)' },
+        });
+      } else {
+        toast.error('Failed to start session');
+      }
     } finally {
       setStarting(null);
     }
@@ -225,7 +253,6 @@ export default function MatchFinder() {
               ))}
             </div>
           ) : (
-            /* No Matches */
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useSocket } from '../hooks/useSocket';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const matchSocket = useSocket('match');
+  const [incomingMatch, setIncomingMatch] = useState<any>(null);
 
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard' },
@@ -28,6 +32,40 @@ export default function Navbar() {
       return location.pathname === '/dashboard';
     }
     return location.pathname === path;
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    matchSocket.emit('join-lobby', {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      elo_score: user.elo_score,
+      rating: user.rating,
+      skill_tags: user.skill_tags,
+      free_slots: user.free_slots,
+    });
+
+    const unsubscribeIncoming = matchSocket.on('incoming-match', ({ roomId, from }: any) => {
+      setIncomingMatch({ roomId, from });
+      toast.success(`${from.name} wants to practice with you!`, {
+        duration: 10000,
+        action: {
+          label: 'Join Practice',
+          onClick: () => handleAcceptMatch(roomId)
+        }
+      });
+    });
+
+    return () => {
+      unsubscribeIncoming();
+    };
+  }, [matchSocket, user]);
+
+  const handleAcceptMatch = (roomId: string) => {
+    setIncomingMatch(null);
+    navigate(`/session/${roomId}`);
   };
 
   return (

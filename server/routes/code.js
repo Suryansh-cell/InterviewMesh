@@ -6,6 +6,21 @@ const router = express.Router();
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL = 'https://api.groq.com/v1/execute';
 
+router.post('/run', auth, async (req, res) => {
+  const { code, language } = req.body;
+  if (!code || !language) {
+    return res.status(400).json({ error: 'Both code and language are required.' });
+  }
+
+  try {
+    const result = await executeCode(code, language);
+    res.json(result);
+  } catch (err) {
+    console.error('Code execution failed:', err?.message || err);
+    res.status(500).json({ error: 'Code execution failed. Please try again.' });
+  }
+});
+
 router.post('/analyze', auth, async (req, res) => {
   const { code, language } = req.body;
   if (!code || !language) {
@@ -71,8 +86,71 @@ function parseGroqJson(raw) {
   return null;
 }
 
+async function executeCode(code, language) {
+  // This is a simplified implementation for demonstration
+  // In production, you'd use a proper code execution service like Judge0 or similar
+  
+  try {
+    let output = '';
+    let error = '';
+    
+    switch (language.toLowerCase()) {
+      case 'javascript':
+        // Simple JS execution (very basic, not safe for production)
+        try {
+          // Create a safe context for execution
+          const context = {
+            console: {
+              log: (...args) => { output += args.join(' ') + '\n'; },
+              error: (...args) => { error += args.join(' ') + '\n'; }
+            }
+          };
+          
+          // Basic execution (this is not safe and should not be used in production)
+          const result = new Function('console', `return (function() { ${code} })()`)(context.console);
+          if (result !== undefined) {
+            output += result + '\n';
+          }
+        } catch (e) {
+          error = e.message;
+        }
+        break;
+        
+      case 'python':
+        // For Python, we'd need to spawn a python process
+        // This is a placeholder - in real implementation, use child_process
+        output = 'Python execution not implemented in demo\n';
+        break;
+        
+      case 'java':
+        output = 'Java execution not implemented in demo\n';
+        break;
+        
+      case 'cpp':
+        output = 'C++ execution not implemented in demo\n';
+        break;
+        
+      default:
+        error = `Unsupported language: ${language}`;
+    }
+    
+    return {
+      success: error === '',
+      output: output.trim(),
+      error: error.trim(),
+      language
+    };
+  } catch (err) {
+    return {
+      success: false,
+      output: '',
+      error: err.message,
+      language
+    };
+  }
+}
+
 function analyzeHeuristics(code, language) {
-  const normalizedCode = code.toLowerCase();
   const lineCount = code.split('\n').length;
   const loopCount = (normalizedCode.match(/\b(for|while|foreach)\b/g) || []).length;
   const nestedLoops = /for\s*\([^)]*\)\s*\{[\s\S]*for\s*\([^)]*\)/.test(code)

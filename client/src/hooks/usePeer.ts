@@ -53,8 +53,10 @@ export function usePeer({ roomId, onRemoteStream }: UsePeerOptions) {
 
     pc.ontrack = (event) => {
       const remoteStream = event.streams[0];
+      console.log('Received remote stream:', remoteStream);
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
+        console.log('Set remote video srcObject');
       }
       onRemoteStream?.(remoteStream);
       setIsConnected(true);
@@ -126,6 +128,7 @@ export function usePeer({ roomId, onRemoteStream }: UsePeerOptions) {
     socket.on('peer-joined', () => startCallIfNeeded(true));
 
     socket.on('offer', async ({ offer }) => {
+      console.log('Received offer, creating answer');
       const stream = localStreamRef.current || (await getLocalStream());
       if (!stream) return;
 
@@ -139,9 +142,11 @@ export function usePeer({ roomId, onRemoteStream }: UsePeerOptions) {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.emit('answer', { roomId, answer });
+      console.log('Sent answer');
     });
 
     socket.on('answer', async ({ answer }) => {
+      console.log('Received answer');
       const pc = peerConnectionRef.current;
       if (!pc) return;
       await pc.setRemoteDescription(new RTCSessionDescription(answer));

@@ -8,7 +8,9 @@ import {
   LogOut,
   Map,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Brain,
+  FileQuestion
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { motion } from 'framer-motion';
@@ -22,11 +24,20 @@ export default function Sidebar() {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Gamepad2, label: 'Practice', path: '/match' },
     { icon: Map, label: 'Roadmap', path: '/roadmap' },
+    { icon: Brain, label: 'AI Mindmaps & Quizzes', path: 'external', externalUrl: 'https://vectorvisionarymindmapgenerator.vercel.app/roadmap' },
     { icon: History, label: 'History', path: '/dashboard#history' },
     { icon: Settings, label: 'Settings', path: '/setup' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleMenuClick = (item: any) => {
+    if (item.path === 'external' && item.externalUrl) {
+      const email = user?.email || '';
+      const url = `${item.externalUrl}?email=${encodeURIComponent(email)}`;
+      window.open(url, '_blank');
+    }
+  };
 
   return (
     <motion.div 
@@ -70,24 +81,35 @@ export default function Sidebar() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.08 }}
           >
-            <Link
-              to={item.path}
-              title={item.label}
-              className={`flex items-center ${collapsed ? 'justify-center' : ''} gap-3 ${collapsed ? 'px-3' : 'px-4'} py-3 rounded-xl text-sm font-bold transition-all duration-300 group interactive-element ${
-                isActive(item.path) 
-                  ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shadow-lg shadow-indigo-500/10' 
-                  : 'text-slate-400 hover:bg-white/8 hover:text-white hover:shadow-md'
-              }`}
-            >
-              <item.icon size={20} className={`transition-all duration-300 ${isActive(item.path) ? 'text-indigo-400 scale-110' : 'group-hover:text-white group-hover:scale-105'}`} />
-              {!collapsed && item.label}
-              {isActive(item.path) && !collapsed && (
-                <motion.div
-                  layoutId="sidebarIndicator"
-                  className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366F1] animate-pulse-glow"
-                />
-              )}
-            </Link>
+            {item.path === 'external' ? (
+              <button
+                onClick={() => handleMenuClick(item)}
+                title={item.label}
+                className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 ${collapsed ? 'px-3' : 'px-4'} py-3 rounded-xl text-sm font-bold transition-all duration-300 group interactive-element text-slate-400 hover:bg-white/8 hover:text-white hover:shadow-md`}
+              >
+                <item.icon size={20} className="transition-all duration-300 group-hover:text-white group-hover:scale-105" />
+                {!collapsed && item.label}
+              </button>
+            ) : (
+              <Link
+                to={item.path}
+                title={item.label}
+                className={`flex items-center ${collapsed ? 'justify-center' : ''} gap-3 ${collapsed ? 'px-3' : 'px-4'} py-3 rounded-xl text-sm font-bold transition-all duration-300 group interactive-element ${
+                  isActive(item.path) 
+                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shadow-lg shadow-indigo-500/10' 
+                    : 'text-slate-400 hover:bg-white/8 hover:text-white hover:shadow-md'
+                }`}
+              >
+                <item.icon size={20} className={`transition-all duration-300 ${isActive(item.path) ? 'text-indigo-400 scale-110' : 'group-hover:text-white group-hover:scale-105'}`} />
+                {!collapsed && item.label}
+                {isActive(item.path) && !collapsed && (
+                  <motion.div
+                    layoutId="sidebarIndicator"
+                    className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366F1] animate-pulse-glow"
+                  />
+                )}
+              </Link>
+            )}
           </motion.div>
         ))}
       </nav>

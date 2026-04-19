@@ -26,8 +26,10 @@ export default function Session() {
   const [peerName, setPeerName] = useState<string>('Waiting for peer...');
   const [chatInput, setChatInput] = useState('');
   const [ending, setEnding] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [runResult, setRunResult] = useState<any>(null);
+  const [running, setRunning] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const editorSocket = useSocket('editor');
@@ -179,6 +181,26 @@ export default function Session() {
     }
   };
 
+  const handleRunCode = async () => {
+    if (!code) {
+      toast.error('Please enter some code before running.');
+      return;
+    }
+
+    setRunning(true);
+    setRunResult(null);
+
+    try {
+      const res = await api.post('/api/code/run', { code, language });
+      setRunResult(res.data);
+      toast.success('Code executed successfully', { icon: '▶️' });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Code execution failed');
+    } finally {
+      setRunning(false);
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -225,7 +247,7 @@ export default function Session() {
         <div className="flex-1 flex overflow-hidden">
           {/* Left: Code Editor (60%) */}
           <div className="w-[60%] border-r" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-            <CodeEditor onCodeChange={handleCodeChange} onAnalyze={handleAnalyzeSolution} />
+            <CodeEditor onCodeChange={handleCodeChange} onAnalyze={handleAnalyzeSolution} onRun={handleRunCode} />
           </div>
 
           {/* Right Panel (40%) */}
@@ -259,7 +281,22 @@ export default function Session() {
                   </div>
 
                   <div className="space-y-3 text-sm text-slate-300 overflow-y-auto max-h-[120px] pr-2">
-                    {analysisResult ? (
+                    {runResult ? (
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+                        <p className="text-xs uppercase tracking-[0.3em] opacity-50">Execution Result</p>
+                        <div className="mt-2">
+                          {runResult.success ? (
+                            <div className="text-green-400 text-xs font-mono bg-green-950/20 p-2 rounded">
+                              <pre className="whitespace-pre-wrap">{runResult.output || 'No output'}</pre>
+                            </div>
+                          ) : (
+                            <div className="text-red-400 text-xs font-mono bg-red-950/20 p-2 rounded">
+                              <pre className="whitespace-pre-wrap">{runResult.error || 'Execution failed'}</pre>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : analysisResult ? (
                       <>
                         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
                           <p className="text-xs uppercase tracking-[0.3em] opacity-50">Efficiency score</p>
@@ -277,7 +314,7 @@ export default function Session() {
                       </>
                     ) : (
                       <p className="text-xs leading-relaxed opacity-70">
-                        Run a quick analysis to get feedback on algorithm efficiency, repeated operations, and optimization opportunities.
+                        Run your code or get AI analysis to see results here.
                       </p>
                     )}
                   </div>

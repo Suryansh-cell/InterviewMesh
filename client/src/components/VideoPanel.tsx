@@ -36,8 +36,10 @@ export default function VideoPanel({ roomId }: VideoPanelProps) {
                 <line x1="1" y1="1" x2="23" y2="23" stroke="#EF4444" />
               </svg>
             </div>
-            <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>Video unavailable</p>
-            <p className="text-xs mt-1" style={{ color: '#64748B' }}>{error}</p>
+            <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>Waiting for peer video...</p>
+            <p className="text-xs mt-1" style={{ color: '#64748B' }}>
+              Make sure both participants have granted camera permissions
+            </p>
           </div>
         ) : (
           <video
