@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Toaster, toast } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
+import { useSocket } from './hooks/useSocket';
 
 // Pages
 import Login from './pages/Login';
@@ -98,6 +100,56 @@ function AnimatedRoutes() {
   );
 }
 
+function GlobalNotificationListener() {
+  const { user } = useAuthStore();
+  const matchSocket = useSocket('match');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribeIncoming = matchSocket.on('incoming-match', ({ roomId, from }: any) => {
+      console.log('📡 GLOBAL: Received incoming match invitation:', { roomId, from });
+      toast((t) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="live-dot" />
+            <p className="font-bold text-slate-100">Connect with {from.name}?</p>
+          </div>
+          <p className="text-xs text-slate-400">They are ready to start a session with you.</p>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate(`/session/${roomId}`);
+              }}
+              className="px-3 py-1 bg-indigo-500 text-white rounded text-xs font-bold hover:bg-indigo-600 transition-colors"
+            >
+              Join Now
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="px-3 py-1 bg-slate-700 text-slate-300 rounded text-xs font-bold hover:bg-slate-600 transition-colors"
+            >
+              Ignore
+            </button>
+          </div>
+        </div>
+      ), {
+        duration: 10000,
+        position: 'top-right',
+        style: { background: '#1E293B', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.1)', padding: '16px' },
+      });
+    });
+
+    return () => {
+      unsubscribeIncoming();
+    };
+  }, [matchSocket, user, navigate]);
+
+  return null;
+}
+
 export default function App() {
   const { fetchUser, token } = useAuthStore();
 
@@ -126,8 +178,10 @@ export default function App() {
       </div>
 
       <BrowserRouter>
+        <GlobalNotificationListener />
         <AnimatedRoutes />
       </BrowserRouter>
+      <Toaster />
     </div>
   );
 }

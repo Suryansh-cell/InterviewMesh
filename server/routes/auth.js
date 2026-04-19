@@ -21,14 +21,24 @@ passport.use(new GoogleStrategy({
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     const email = profile.emails[0].value;
+    console.log(`📡 [AUTH] Attempting DB lookup for: ${email}`);
+    
     const existing = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (existing.rows.length > 0) return done(null, existing.rows[0]);
+    if (existing.rows.length > 0) {
+      console.log('✅ [AUTH] User matched in database');
+      return done(null, existing.rows[0]);
+    }
+    
+    console.log('📝 [AUTH] New user detected, creating record...');
     const newUser = await pool.query(
       `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING *`,
       [profile.displayName, email, 'GOOGLE_AUTH']
     );
     return done(null, newUser.rows[0]);
-  } catch (err) { return done(err, null); }
+  } catch (err) { 
+    console.error('❌ [AUTH STRATEGY ERROR]:', err.message);
+    return done(err, null); 
+  }
 }));
 
 passport.serializeUser((user, done) => done(null, user.id));
@@ -61,10 +71,16 @@ router.get('/demo', async (req, res) => {
     let user;
     if (existing.rows.length > 0) {
       user = existing.rows[0];
+      // Update status to online and ensure skills exist
+      await pool.query(
+        'UPDATE users SET is_online = true, skill_tags = $1 WHERE id = $2',
+        [JSON.stringify(['React', 'Node.js', 'System Design']), user.id]
+      );
     } else {
       const newUser = await pool.query(
-        `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING *`,
-        ['Demo User', demoEmail, 'DEMO_AUTH']
+        `INSERT INTO users (name, email, password_hash, skill_tags, is_online, elo_score) 
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        ['Demo User', demoEmail, 'DEMO_AUTH', JSON.stringify(['React', 'Node.js', 'System Design']), true, 1450]
       );
       user = newUser.rows[0];
     }
@@ -89,17 +105,26 @@ router.get('/google', (req, res, next) => {
   }
   return passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
 });
-router.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}/?error=auth_failed` }),
-  (req, res) => {
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err, user, info) => {
+    if (err) {
+      console.error('❌ Passport Auth Error:', err);
+      return res.status(500).json({ error: 'Auth failed', details: err.message });
+    }
+    if (!user) {
+      console.warn('⚠️ Passport Auth Failed - No User:', info);
+      return res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`);
+    }
+    
+    // Success: create token and redirect
     const token = jwt.sign(
-      { id: req.user.id, email: req.user.email, name: req.user.name },
-      process.env.JWT_SECRET,
+      { id: user.id, email: user.email, name: user.name },
+      process.env.JWT_SECRET || 'secret',
       { expiresIn: '7d' }
     );
     res.redirect(`${process.env.CLIENT_URL}/login-success?token=${token}`);
-  }
-);
+  })(req, res, next);
+});
 
 // Verify token endpoint
 router.get('/verify', (req, res) => {

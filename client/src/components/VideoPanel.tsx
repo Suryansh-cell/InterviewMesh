@@ -26,19 +26,20 @@ export default function VideoPanel({ roomId }: VideoPanelProps) {
       {/* Remote Video (Main) */}
       <div className="flex-1 relative overflow-hidden rounded-lg m-1"
         style={{ background: 'rgba(30,41,59,0.6)' }}>
-        {error ? (
+        {(error || roomId.startsWith('demo-')) ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
-              style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
-                <path d="M23 7l-7 5 7 5V7z" />
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                <line x1="1" y1="1" x2="23" y2="23" stroke="#EF4444" />
-              </svg>
+            <div className="relative mb-4">
+              <div className="w-24 h-24 rounded-full border-4 border-indigo-500/30 animate-pulse absolute inset-0" />
+              <img 
+                src="https://api.dicebear.com/7.x/initials/svg?seed=Sarah&backgroundColor=6366f1,8b5cf6,a78bfa&backgroundType=gradientLinear" 
+                className="w-24 h-24 rounded-full relative z-10 border-2 border-indigo-400/50 grayscale-[0.5]"
+                alt="Simulated Peer"
+              />
             </div>
-            <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>Waiting for peer video...</p>
-            <p className="text-xs mt-1" style={{ color: '#64748B' }}>
-              Make sure both participants have granted camera permissions
+            <div className="pill pill-primary text-[9px] mb-3">SIMULATED FEED</div>
+            <p className="text-sm font-black text-white uppercase tracking-widest">Sarah Chen</p>
+            <p className="text-[10px] mt-1 opacity-50 uppercase tracking-widest" style={{ color: '#94A3B8' }}>
+              Senior Frontend Engineer
             </p>
           </div>
         ) : (
@@ -51,9 +52,9 @@ export default function VideoPanel({ roomId }: VideoPanelProps) {
           />
         )}
 
-        {/* Local Video (PiP) */}
-        <div className="absolute bottom-3 right-3 w-32 h-24 rounded-lg overflow-hidden border-2 shadow-xl"
-          style={{ borderColor: 'rgba(99,102,241,0.4)' }}>
+        {/* Local Video Icon (Circular PiP) */}
+        <div className="absolute bottom-6 right-6 w-36 h-36 rounded-full overflow-hidden border-4 shadow-[0_0_30px_rgba(99,102,241,0.5)] z-50 transform hover:scale-110 transition-all duration-500"
+          style={{ borderColor: 'rgba(99,102,241,0.8)', background: '#0F172A' }}>
           <video
             ref={localVideoRef}
             autoPlay
@@ -62,6 +63,7 @@ export default function VideoPanel({ roomId }: VideoPanelProps) {
             className="w-full h-full object-cover"
             style={{ transform: 'scaleX(-1)' }}
           />
+          <div className="absolute inset-0 rounded-full border-2 border-white/10 pointer-events-none" />
         </div>
       </div>
 

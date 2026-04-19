@@ -72,6 +72,16 @@ export default function QuizPanel({ sessionId, onSubmit }: QuizPanelProps) {
     setSubmitting(true);
     toast('Quiz submitted — ML analyzing...', { icon: '🤖' });
 
+    // Demo Mode bypass
+    if (sessionId.startsWith('demo-')) {
+      setTimeout(() => {
+        setMlLabel('PROGRESS');
+        toast.success('🎉 Great progress! Topic advancing.');
+        setSubmitting(false);
+      }, 1500);
+      return;
+    }
+
     try {
       const res = await api.post('/api/quiz/submit', {
         session_id: sessionId,
@@ -91,7 +101,8 @@ export default function QuizPanel({ sessionId, onSubmit }: QuizPanelProps) {
       };
       toast.success(labelMessages[res.data.ml_label] || 'Result recorded');
     } catch {
-      toast.error('Failed to submit');
+      toast.error('Failed to submit. Using local bypass.');
+      setMlLabel('RETRY');
     } finally {
       setSubmitting(false);
     }

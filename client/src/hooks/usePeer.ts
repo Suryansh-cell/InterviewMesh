@@ -100,7 +100,8 @@ export function usePeer({ roomId, onRemoteStream }: UsePeerOptions) {
   useEffect(() => {
     if (!roomId) return;
 
-    const socket = io('http://localhost:3001/signal', {
+    const SOCKET_URL = `http://${window.location.hostname}:3001`;
+    const socket = io(`${SOCKET_URL}/signal`, {
       transports: ['websocket', 'polling'],
     });
     signalSocketRef.current = socket;

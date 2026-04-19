@@ -54,6 +54,14 @@ export default function Session() {
   // Fetch session info
   useEffect(() => {
     if (!roomId) return;
+    
+    // Handle Demo/Solo mode
+    if (roomId.startsWith('demo-')) {
+      setPeerName('Sarah Chen (Demo Peer)');
+      setRoom(roomId);
+      return;
+    }
+
     api.get(`/api/sessions/${roomId}`).then((res) => {
       const session = res.data;
       const partnerName = session.user_a === user?.id ? session.user_b_name : session.user_a_name;
@@ -61,7 +69,7 @@ export default function Session() {
       // Start session
       api.patch(`/api/sessions/${roomId}/start`).catch(() => {});
     }).catch(() => {});
-  }, [roomId, user]);
+  }, [roomId, user, setRoom]);
 
   // Listen for editor sync
   useEffect(() => {
