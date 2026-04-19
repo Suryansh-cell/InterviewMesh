@@ -79,14 +79,24 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     try {
-      const res = await fetch('/auth/status');
+      // Use a timeout to avoid hanging if proxy/backend is down
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch('/auth/status', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || 'Google OAuth is not configured');
       }
       window.location.href = '/auth/google';
     } catch (error: any) {
-      toast.error(error?.message || 'Google OAuth setup is missing on server');
+      if (error.name === 'AbortError') {
+        toast.error('Connection timed out. Ensure backend is running.');
+      } else {
+        toast.error(error?.message || 'Google OAuth setup is missing on server');
+      }
     }
   };
 

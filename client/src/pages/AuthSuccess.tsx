@@ -1,62 +1,90 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 export default function AuthSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const [error, setError] = React.useState<string | null>(null);
-  const token = React.useMemo(() => searchParams.get('token'), [searchParams]);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setError('Missing token in URL. Please try signing in again.');
-      return;
+    const token = searchParams.get('token');
+    
+    // Set a timeout to show error if authentication takes too long
+    const timeoutId = setTimeout(() => {
+      setTimedOut(true);
+    }, 10000);
+
+    if (token) {
+      login(token)
+        .then(() => {
+          clearTimeout(timeoutId);
+          navigate('/setup', { replace: true });
+        })
+        .catch((err) => {
+          clearTimeout(timeoutId);
+          console.error('Auth success error:', err);
+          toast.error('Authentication failed. Please try again.');
+          navigate('/', { replace: true });
+        });
+    } else {
+      clearTimeout(timeoutId);
+      navigate('/', { replace: true });
     }
 
-    login(token)
-      .then(() => {
-        navigate('/setup', { replace: true });
-      })
-      .catch(() => {
-        setError('Unable to authenticate with this token. Please go back and try again.');
-      });
-  }, [token, login, navigate]);
+    return () => clearTimeout(timeoutId);
+  }, [searchParams, login, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#050b18] px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: 'easeOut' }}
-        className="rounded-[2rem] border border-white/10 bg-slate-950/85 p-10 text-center shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
-      >
-        <motion.div
-          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-indigo-400 border-t-transparent"
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}
-        >
-          <div className="h-7 w-7 rounded-full bg-gradient-to-r from-violet-500 to-indigo-400 shadow-xl shadow-violet-500/30" />
-        </motion.div>
-        <h1 className="text-3xl font-semibold text-white">Signing you in...</h1>
-        <p className="mt-3 max-w-md text-sm leading-7 text-slate-400">
-          Connecting your account and preparing a premium onboarding experience. You’ll be on the resume step shortly.
-        </p>
-        {error && (
-          <div className="mt-6 rounded-3xl border border-rose-500/20 bg-rose-500/10 p-5 text-left text-sm text-rose-100">
-            <p className="font-semibold text-rose-200">Authentication issue</p>
-            <p className="mt-2 text-rose-100">{error}</p>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="mt-4 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              Return to sign in
-            </button>
-          </div>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: '#0F172A' }}>
+      <div className="max-w-md w-full text-center space-y-8">
+        {!timedOut ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-8"
+          >
+            <div className="relative mx-auto w-20 h-20">
+              <div className="absolute inset-0 bg-indigo-500/20 rounded-full blur-2xl animate-pulse" />
+              <div className="absolute inset-0 border-4 border-indigo-500/10 rounded-full" />
+              <div className="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-black text-white tracking-tight">Authenticating...</h1>
+              <p className="text-sm font-medium text-slate-400">Verifying session with InterviewMesh servers</p>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="premium-card p-10 space-y-6 border-rose-500/20"
+          >
+             <div className="w-16 h-16 bg-rose-500/10 rounded-[22px] flex items-center justify-center mx-auto text-rose-500 mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+             </div>
+             <div className="space-y-2">
+               <h2 className="text-xl font-black text-white">Connection Timeout</h2>
+               <p className="text-sm text-slate-400 leading-relaxed">
+                 The server is taking too long to respond. This might be due to database connectivity issues in your region.
+               </p>
+             </div>
+             <button 
+               onClick={() => navigate('/')}
+               className="w-full btn-glow btn-secondary py-3 text-sm font-black uppercase tracking-widest"
+             >
+               Return to Landing
+             </button>
+          </motion.div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -12,28 +12,25 @@ const session = require('express-session');
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  'http://localhost:5176',
-  'http://localhost:5177',
-  'http://localhost:5178',
-  'http://localhost:5179',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:5174',
-  'http://127.0.0.1:5175',
-  'http://127.0.0.1:5176',
-  'http://127.0.0.1:5177',
-  'http://127.0.0.1:5178',
-  'http://127.0.0.1:5179',
-];
+const isLocalNetwork = (origin) => {
+  if (!origin) return true;
+  const hostname = new URL(origin).hostname;
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.') || // Covers 172.16.x.x - 172.31.x.x
+    (process.env.CLIENT_URL && origin.startsWith(process.env.CLIENT_URL))
+  );
+};
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isLocalNetwork(origin)) {
       callback(null, true);
     } else {
+      console.warn(`⚠️ CORS blocked: ${origin}`);
       callback(new Error(`CORS policy blocked origin ${origin}`));
     }
   },
@@ -43,7 +40,13 @@ const corsOptions = {
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isLocalNetwork(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS blocked for Socket.io'));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   }
