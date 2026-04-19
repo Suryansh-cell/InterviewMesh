@@ -49,13 +49,20 @@ export default function Navbar() {
 
     const unsubscribeIncoming = matchSocket.on('incoming-match', ({ roomId, from }: any) => {
       setIncomingMatch({ roomId, from });
-      toast.success(`${from.name} wants to practice with you!`, {
-        duration: 10000,
-        action: {
-          label: 'Join Practice',
-          onClick: () => handleAcceptMatch(roomId)
-        }
-      });
+      toast((t) => (
+        <div className="flex items-center gap-4">
+          <span className="font-medium text-sm text-white">{from.name} wants to practice!</span>
+          <button
+            onClick={() => {
+              handleAcceptMatch(roomId);
+              toast.dismiss(t.id);
+            }}
+            className="px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors"
+          >
+            Join
+          </button>
+        </div>
+      ), { duration: 10000, position: 'top-right' });
     });
 
     return () => {
