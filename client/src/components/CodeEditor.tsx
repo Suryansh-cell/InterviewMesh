@@ -4,10 +4,11 @@ import { useSessionStore } from '../store/sessionStore';
 
 interface CodeEditorProps {
   onCodeChange?: (code: string) => void;
+  onAnalyze?: () => void;
   readOnly?: boolean;
 }
 
-export default function CodeEditor({ onCodeChange, readOnly = false }: CodeEditorProps) {
+export default function CodeEditor({ onCodeChange, onAnalyze, readOnly = false }: CodeEditorProps) {
   const { code, language, setCode, setLanguage } = useSessionStore();
   const editorRef = useRef<any>(null);
 
@@ -19,6 +20,58 @@ export default function CodeEditor({ onCodeChange, readOnly = false }: CodeEdito
     { value: 'cpp', label: 'C++' },
   ];
 
+  type LanguageKey = keyof typeof languageTemplates;
+
+  const languageTemplates = {
+    javascript: `// JavaScript Solution
+function solution() {
+    // Your code here
+    
+}
+
+// Test cases
+console.log(solution());`,
+    typescript: `// TypeScript Solution
+function solution(): any {
+    // Your code here
+    
+}
+
+// Test cases
+console.log(solution());`,
+    python: `# Python Solution
+def solution():
+    # Your code here
+    pass
+
+# Test cases
+if __name__ == "__main__":
+    print(solution())`,
+    java: `// Java Solution
+public class Solution {
+    public static void main(String[] args) {
+        // Your code here
+        
+        // Test cases
+        System.out.println("Solution result");
+    }
+}`,
+    cpp: `// C++ Solution
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    // Your code here
+    
+    // Test cases
+    cout << "Solution result" << endl;
+    return 0;
+}`
+  };
+
+  const templateValues = Object.values(languageTemplates);
+
   const handleEditorMount: OnMount = (editor) => {
     editorRef.current = editor;
     editor.focus();
@@ -28,6 +81,15 @@ export default function CodeEditor({ onCodeChange, readOnly = false }: CodeEdito
     const newCode = value || '';
     setCode(newCode);
     onCodeChange?.(newCode);
+  };
+
+  const handleLanguageChange = (newLanguage: LanguageKey) => {
+    const currentCode = useSessionStore.getState().code;
+    const isTemplateCode = templateValues.includes(currentCode);
+    setLanguage(newLanguage);
+    if (!currentCode || isTemplateCode) {
+      setCode(languageTemplates[newLanguage]);
+    }
   };
 
   const handleCopy = () => {
@@ -42,7 +104,7 @@ export default function CodeEditor({ onCodeChange, readOnly = false }: CodeEdito
         <div className="flex items-center gap-2">
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={(e) => handleLanguageChange(e.target.value as LanguageKey)}
             className="text-xs font-medium rounded-md px-2 py-1 outline-none cursor-pointer"
             style={{
               background: 'rgba(255,255,255,0.06)',
@@ -64,6 +126,18 @@ export default function CodeEditor({ onCodeChange, readOnly = false }: CodeEdito
             }}
           >
             ▶ Run
+          </button>
+          <button
+            onClick={onAnalyze}
+            disabled={!onAnalyze}
+            className="text-xs px-3 py-1 rounded-md font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: 'rgba(99,102,241,0.15)',
+              color: '#A5B4FC',
+              border: '1px solid rgba(99,102,241,0.3)',
+            }}
+          >
+            🧠 Analyze
           </button>
         </div>
         <div className="flex items-center gap-2">

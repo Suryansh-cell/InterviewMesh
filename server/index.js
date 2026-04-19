@@ -1,4 +1,6 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+console.log('Loaded env from', path.resolve(__dirname, '.env'));
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -68,6 +70,8 @@ app.use('/api/match', require('./routes/match'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/quiz', require('./routes/quiz'));
 app.use('/api/questions', require('./routes/questions'));
+app.use('/api/code', require('./routes/code'));
+app.use('/api/resume', require('./routes/resume'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -78,6 +82,7 @@ app.get('/health', (req, res) => {
 require('./socket/editorSync')(io);
 require('./socket/signaling')(io);
 require('./socket/integrity')(io);
+require('./socket/match')(io);
 
 // Error handling
 app.use((err, req, res, next) => {

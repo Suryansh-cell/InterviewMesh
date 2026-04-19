@@ -2,14 +2,28 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  in: { opacity: 1, y: 0 },
-  out: { opacity: 0, y: -20 },
+  initial: {
+    opacity: 0,
+    scale: 0.95,
+    y: 20,
+    filter: 'blur(10px)'
+  },
+  in: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    filter: 'blur(0px)'
+  },
+  out: {
+    opacity: 0,
+    scale: 1.05,
+    y: -20,
+    filter: 'blur(5px)'
+  },
 };
 
 const pageTransition = {
-  duration: 0.3,
-  ease: 'easeInOut' as const,
+  duration: 0.6,
 };
 
 interface PageTransitionProps {
@@ -26,6 +40,9 @@ export default function PageTransition({ children, className = '' }: PageTransit
       variants={pageVariants}
       transition={pageTransition}
       className={className}
+      style={{
+        willChange: 'transform, opacity, filter',
+      }}
     >
       {children}
     </motion.div>

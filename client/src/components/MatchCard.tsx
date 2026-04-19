@@ -33,10 +33,11 @@ export default function MatchCard({ match, onStartSession, index }: MatchCardPro
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="premium-card group h-full flex flex-col"
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: index * 0.1, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      className="glass-card card-hover h-full flex flex-col group cursor-pointer"
     >
       <div className="p-8 flex-1 flex flex-col space-y-8">
         {/* User Profile Header */}

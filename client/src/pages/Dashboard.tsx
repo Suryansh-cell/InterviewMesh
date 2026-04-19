@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   AreaChart, 
   Area, 
@@ -23,7 +23,6 @@ import {
 import { useAuthStore } from '../store/authStore';
 import api from '../api/axios';
 import Sidebar from '../components/Sidebar';
-import RoadmapView from '../components/RoadmapView';
 import PageTransition from '../components/PageTransition';
 import { SkeletonStats, SkeletonTable } from '../components/LoadingSkeleton';
 import toast from 'react-hot-toast';
@@ -106,7 +105,7 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen bg-[#0F172A]">
+      <div className="flex min-h-screen morph-bg">
         <Sidebar />
         
         <main className="flex-1 overflow-y-auto">
@@ -119,7 +118,7 @@ export default function Dashboard() {
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex-1 premium-card p-10 flex flex-col md:flex-row items-center justify-between gap-10"
+                className="flex-1 glass-card p-10 flex flex-col md:flex-row items-center justify-between gap-10 card-hover"
               >
                 <div className="space-y-6 max-w-lg">
                   <div className="space-y-2">
@@ -151,7 +150,7 @@ export default function Dashboard() {
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="w-full lg:w-[400px] premium-card p-8 bg-indigo-500/5 border-indigo-500/20 flex flex-col justify-between"
+                className="w-full lg:w-[400px] glass-card p-8 bg-indigo-500/5 border-indigo-500/20 flex flex-col justify-between card-hover"
               >
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
@@ -200,7 +199,7 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="xl:col-span-2 premium-card p-10 space-y-10"
+                className="xl:col-span-2 glass-card p-10 space-y-10 card-hover"
               >
                 <div className="flex items-end justify-between">
                   <div className="space-y-1">
@@ -280,7 +279,7 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="premium-card p-10 space-y-10"
+                className="glass-card p-10 space-y-10 card-hover"
               >
                 <div className="space-y-1">
                   <h2 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Recent Feedback</h2>
@@ -321,7 +320,136 @@ export default function Dashboard() {
               </motion.div>
             </div>
 
-            {/* Roadmap or Activity can go here if needed, but the user specifically asked for these 4 sections */}
+            {/* AI Roadmap Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="glass-card p-10 space-y-10 card-hover"
+            >
+              <div className="space-y-1">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">AI Roadmap</h2>
+                <h3 className="text-3xl font-black tracking-tighter text-white">Your Learning Journey</h3>
+                <p className="text-sm opacity-60">Personalized progress tracking powered by machine learning</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Current Focus */}
+                <div className="space-y-6">
+                  <h4 className="text-lg font-bold text-white">🎯 Current Focus Areas</h4>
+                  <div className="space-y-4">
+                    {[
+                      { skill: 'System Design', progress: 68, target: 'Master distributed systems', color: '#6366F1' },
+                      { skill: 'Data Structures', progress: 82, target: 'Advanced graph algorithms', color: '#10B981' },
+                      { skill: 'Communication', progress: 74, target: 'Technical storytelling', color: '#F59E0B' }
+                    ].map((focus, i) => (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                        className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-white">{focus.skill}</span>
+                          <span className="text-sm font-mono" style={{ color: focus.color }}>{focus.progress}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 rounded-full h-2">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${focus.progress}%` }}
+                            transition={{ delay: 0.7 + i * 0.1, duration: 1 }}
+                            className="h-2 rounded-full" 
+                            style={{ backgroundColor: focus.color }}
+                          />
+                        </div>
+                        <p className="text-xs opacity-60">{focus.target}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Improvement Timeline */}
+                <div className="space-y-6">
+                  <h4 className="text-lg font-bold text-white">📈 Recent Improvements</h4>
+                  <div className="space-y-4">
+                    {[
+                      { date: '2 days ago', improvement: '+15% in technical accuracy', type: 'improvement' },
+                      { date: '1 week ago', improvement: 'Mastered LRU cache implementation', type: 'achievement' },
+                      { date: '2 weeks ago', improvement: '+8% in communication clarity', type: 'improvement' },
+                      { date: '3 weeks ago', improvement: 'Completed 5 mock interviews', type: 'milestone' }
+                    ].map((item, i) => (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + i * 0.1 }}
+                        className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/5"
+                      >
+                        <div className="w-2 h-2 rounded-full mt-2 ${
+                          item.type === 'improvement' ? 'bg-green-400' :
+                          item.type === 'achievement' ? 'bg-blue-400' :
+                          item.type === 'milestone' ? 'bg-purple-400' : 'bg-gray-400'
+                        }" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white">{item.improvement}</p>
+                          <p className="text-xs opacity-50">{item.date}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Next Steps */}
+              <div className="pt-6 border-t border-white/10">
+                <h4 className="text-lg font-bold text-white mb-4">🚀 Recommended Next Steps</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { action: 'Practice System Design', description: 'Focus on scalability patterns', priority: 'high' },
+                    { action: 'Mock Interview', description: 'Schedule 2 sessions this week', priority: 'medium' },
+                    { action: 'Study Graphs', description: 'Complete graph algorithm mastery', priority: 'low' }
+                  ].map((step, i) => (
+                    <motion.div 
+                      key={i}
+                      whileHover={{ scale: 1.02 }}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                        step.priority === 'high' ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/15' :
+                        step.priority === 'medium' ? 'bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/15' :
+                        'bg-green-500/10 border-green-500/20 hover:bg-green-500/15'
+                      }`}
+                    >
+                      <h5 className="font-semibold text-white mb-1">{step.action}</h5>
+                      <p className="text-xs opacity-70">{step.description}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Roadmap Shortcut Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="glass-card p-10 card-hover"
+            >
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">AI Roadmap</h2>
+                  <h3 className="text-3xl font-black tracking-tighter text-white">Your learning journey is now separate</h3>
+                  <p className="mt-3 text-sm opacity-60 max-w-2xl">
+                    Track skill progress, upcoming milestones, and personalized growth steps on the dedicated roadmap page.
+                  </p>
+                </div>
+                <Link
+                  to="/roadmap"
+                  className="btn-glow inline-flex items-center justify-center px-6 py-4 text-sm font-black uppercase tracking-widest"
+                >
+                  Open Roadmap
+                </Link>
+              </div>
+            </motion.div>
           </div>
         </main>
       </div>

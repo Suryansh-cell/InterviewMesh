@@ -34,12 +34,10 @@ export default function Navbar() {
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="sticky top-0 z-50 border-b"
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="sticky top-0 z-50 glass-morphism-strong animate-gentle-float"
       style={{
-        background: 'rgba(15,23,42,0.85)',
-        backdropFilter: 'blur(16px)',
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}
     >
       <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
