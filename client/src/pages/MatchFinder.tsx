@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../api/axios';
@@ -8,13 +8,38 @@ import PageTransition from '../components/PageTransition';
 import { SkeletonCard } from '../components/LoadingSkeleton';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
+import { useSocket } from '../hooks/useSocket';
 
 export default function MatchFinder() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const matchSocket = useSocket('match');
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState<number | null>(null);
+  const [livePeers, setLivePeers] = useState<any[]>([]);
+  const [liveCount, setLiveCount] = useState(0);
+
+  const computeCompatibility = (peer: any) => {
+    if (!user) return 0;
+    const mySkills = Array.isArray(user.skill_tags) ? user.skill_tags : (user.skill_tags ? user.skill_tags : []);
+    const theirSkills = Array.isArray(peer.skill_tags) ? peer.skill_tags : (peer.skill_tags ? peer.skill_tags : []);
+    const overlapCount = theirSkills.filter((skill: string) => mySkills.includes(skill)).length;
+    const diffCount = theirSkills.filter((skill: string) => !mySkills.includes(skill)).length;
+    const base = 40 + overlapCount * 10 - diffCount * 4;
+    return Math.min(98, Math.max(45, Math.round(base + (peer.rating || 0) * 2)));
+  };
+
+  const liveMatches = useMemo(() => {
+    if (!user) return [];
+    return livePeers
+      .filter((peer) => peer.userId !== user.id)
+      .map((peer) => ({
+        ...peer,
+        id: peer.userId,
+        matchScore: computeCompatibility(peer),
+      }));
+  }, [livePeers, user]);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -31,12 +56,54 @@ export default function MatchFinder() {
     fetchMatches();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    matchSocket.emit('join-lobby', {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      elo_score: user.elo_score,
+      rating: user.rating,
+      skill_tags: user.skill_tags,
+      free_slots: user.free_slots,
+    });
+
+    const unsubscribeLobby = matchSocket.on('lobby-update', (users: any[]) => {
+      setLivePeers(users);
+      setLiveCount(users.filter((peer) => peer.userId !== user.id).length);
+    });
+
+    const unsubscribeIncoming = matchSocket.on('incoming-match', ({ roomId, from }: any) => {
+      toast.success(`${from.name} connected with you! Redirecting...`, {
+        style: { background: '#1E293B', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.1)' },
+      });
+      navigate(`/session/${roomId}`);
+    });
+
+    const unsubscribeError = matchSocket.on('match-error', ({ message }: any) => {
+      toast.error(message || 'Match request failed');
+    });
+
+    return () => {
+      unsubscribeLobby();
+      unsubscribeIncoming();
+      unsubscribeError();
+    };
+  }, [matchSocket, navigate, user]);
+
   const handleStartSession = async (matchId: number) => {
+    if (!user) return;
     setStarting(matchId);
     try {
       const res = await api.post('/api/match/accept', { matchedUserId: matchId });
       toast.success('Match found! 🎉', {
         style: { background: '#1E293B', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.1)' },
+      });
+      matchSocket.emit('request-match', {
+        targetUserId: matchId,
+        roomId: res.data.roomId,
+        from: { id: user.id, name: user.name },
       });
       navigate(`/session/${res.data.roomId}`);
     } catch {
@@ -82,7 +149,7 @@ export default function MatchFinder() {
               </motion.p>
               
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 opacity-60">
-                <span className="text-xs font-black uppercase tracking-widest">Active Peers: 124</span>
+                <span className="text-xs font-black uppercase tracking-widest">Live peers: {liveCount}</span>
                 <span className="w-1 h-1 rounded-full bg-white/20" />
                 <span className="text-xs font-black uppercase tracking-widest">Global ELO: 1420</span>
               </div>
@@ -134,6 +201,17 @@ export default function MatchFinder() {
                   <SkeletonCard key={i} />
                 ))}
               </div>
+            </div>
+          ) : liveMatches.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {liveMatches.map((match, i) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  onStartSession={handleStartSession}
+                  index={i}
+                />
+              ))}
             </div>
           ) : matches.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

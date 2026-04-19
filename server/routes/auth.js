@@ -15,8 +15,8 @@ const hasValidGoogleConfig = () => {
 const getCallbackUrl = () => `${process.env.SERVER_URL || 'http://localhost:3001'}/auth/google/callback`;
 
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  clientID: process.env.GOOGLE_CLIENT_ID || 'dummy-id',
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy-secret',
   callbackURL: getCallbackUrl()
 }, async (accessToken, refreshToken, profile, done) => {
   try {

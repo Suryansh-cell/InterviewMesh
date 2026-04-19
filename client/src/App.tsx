@@ -9,6 +9,7 @@ import AuthSuccess from './pages/AuthSuccess';
 import SetupProfile from './pages/SetupProfile';
 import Dashboard from './pages/Dashboard';
 import MatchFinder from './pages/MatchFinder';
+import Roadmap from './pages/Roadmap';
 import Session from './pages/Session';
 import Report from './pages/Report';
 import NotFound from './pages/NotFound';
@@ -42,6 +43,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Login />} />
         <Route path="/login-success" element={<AuthSuccess />} />
+        <Route path="/auth-success" element={<AuthSuccess />} />
         <Route
           path="/setup"
           element={
@@ -55,6 +57,14 @@ function AnimatedRoutes() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roadmap"
+          element={
+            <ProtectedRoute>
+              <Roadmap />
             </ProtectedRoute>
           }
         />
@@ -100,8 +110,24 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <AnimatedRoutes />
-    </BrowserRouter>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Animated Background Particles */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+      </div>
+
+      <BrowserRouter>
+        <AnimatedRoutes />
+      </BrowserRouter>
+    </div>
   );
 }
